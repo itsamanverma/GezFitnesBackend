@@ -1,0 +1,14 @@
+
+> strava-backend-starter@1.0.0 dev
+> tsx watch src/server.ts
+
+{"level":"info","time":"2026-05-23T16:15:00.341Z","pid":872081,"hostname":"aman-Latitude-5310","msg":"Connecting to MongoDB Atlas..."}
+(node:872081) [MONGOOSE] Warning: Duplicate schema index on {"slug":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:872081) [MONGOOSE] Warning: Duplicate schema index on {"token":1} found. This is often due to declaring an index using both "index: true" and "schema.index()". Please remove the duplicate index definition.
+{"level":"info","time":"2026-05-23T16:15:00.667Z","pid":872081,"hostname":"aman-Latitude-5310","msg":"Successfully connected to Redis"}
+{"level":"info","time":"2026-05-23T16:15:00.675Z","pid":872081,"hostname":"aman-Latitude-5310","msg":"Successfully connected to MongoDB Atlas"}
+{"level":"info","time":"2026-05-23T16:15:00.732Z","pid":872081,"hostname":"aman-Latitude-5310","msg":"Server is running in development mode on port 3000"}
+{"level":"info","time":"2026-05-23T16:15:00.732Z","pid":872081,"hostname":"aman-Latitude-5310","msg":"API Base URL: https://yjhsf-2401-4900-1f3a-13ce-3b5-6d9f-bff-340b.run.pinggy-free.link"}
+2026-05-23T16:16:21.981Z ERROR [Better Auth]: Provider not found. Make sure to add the provider in your auth config { provider: 'google' }
+{"level":"warn","time":"2026-05-23T16:16:22.008Z","pid":872081,"hostname":"aman-Latitude-5310","req":{"method":"POST","url":"/api/auth/v1/social","headers":{"x-request-id":"acdac13f-02f1-4e27-8b84-f3755cbefd48"}},"res":{"statusCode":401},"responseTime":86,"msg":"request completed"}
