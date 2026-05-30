@@ -103,11 +103,11 @@ import replayRoutes from './modules/replay/replay.routes.js';
 import liveSessionRoutes from './modules/liveSessions/liveSession.routes.js';
 
 // 6. App Routes
-app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/workspaces', workspaceRoutes);
-app.use('/api/v1/activities', activityRoutes);
-app.use('/api/v1/replay', replayRoutes);
-app.use('/api/v1/live-sessions', liveSessionRoutes);
+app.use('/v1/users', userRoutes);
+app.use('/v1/workspaces', workspaceRoutes);
+app.use('/v1/activities', activityRoutes);
+app.use('/v1/replay', replayRoutes);
+app.use('/v1/live-sessions', liveSessionRoutes);
 
 // 6. 404 Route
 app.use((req, res, next) => {
