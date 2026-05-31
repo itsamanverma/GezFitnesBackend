@@ -2197,9 +2197,33 @@ Retrieves all incoming pending friend requests awaiting action by the current us
             "_id": "60d5ec49f8d5f32a7c8e9b11",
             "name": "User One",
             "email": "user1@example.com"
-          },
-          "createdAt": "2026-05-31T12:00:00Z"
-        }
-      ]
-    }
-    }
+        },
+        "createdAt": "2026-05-31T12:00:00Z"
+      }
+    ]
+  }
+}
+
+---
+
+## 14. Production Hardening (Performance & Security)
+
+The backend implements several production hardening strategies to optimize response times, conserve database resources, and prevent Denial of Service (DoS) memory attacks:
+
+### A. JSON Payload Limits
+To prevent event loop blocking and heap out-of-memory exhaustion, request body sizes are strictly limited at the middleware layer:
+*   **Activity Sync Routes (`/v1/activities`):** Set to a maximum of **5MB** to support large offline sync bundles and GPS polylines.
+*   **All Other Routes:** Constrained to a maximum of **1MB**.
+
+### B. HTTP Response Compression (Gzip/Brotli)
+The application dynamically compresses outgoing HTTP responses using Gzip/Brotli compression:
+*   Reduces JSON payload transit size over mobile networks by **60% - 80%**.
+*   Improves rendering speed on mobile/web clients.
+*   Lowers network egress usage costs.
+
+### C. Redis Caching & Eviction Policies
+The high-density aggregation endpoint `/v1/dashboard` is cached to protect MongoDB resources:
+*   **Cache Duration:** 5-minute (300 seconds) Time-To-Live (TTL).
+*   **Invalidation Triggers:** Automatically evicted (`redisClient.del`) immediately when any of the following mutations occur:
+    *   Activity creation/deletion (`POST /v1/activities` / `DELETE /v1/activities/:id`).
+    *   Daily health metric uploads (`POST /v1/health/sync`).

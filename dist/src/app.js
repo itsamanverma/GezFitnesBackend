@@ -1,6 +1,7 @@
 import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import compression from 'compression';
 import mongoose from 'mongoose';
 import { toNodeHandler } from 'better-auth/node';
 import { auth } from './auth/auth.js';
@@ -22,6 +23,7 @@ app.set('trust proxy', 1);
 app.use(requestIdMiddleware);
 app.use(loggerMiddleware);
 app.use(helmet());
+app.use(compression());
 app.use(cors({
     origin: env.ALLOWED_ORIGINS,
     credentials: true,
