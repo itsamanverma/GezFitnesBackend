@@ -10,7 +10,7 @@ export const createActivitySchema = z.object({
     startedAt: z.string().datetime(),
     endedAt: z.string().datetime(),
     clientActivityId: z.string().uuid().optional(),
-    routeCoordinates: z.array(z.tuple([z.number(), z.number()])).optional().default([]),
+    routePolyline: z.string().optional().default(''),
     deviceMetadata: z.object({
       deviceId: z.string(),
       platform: z.string(),

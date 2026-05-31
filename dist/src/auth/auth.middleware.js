@@ -70,6 +70,9 @@ export async function requireAuth(req, res, next) {
                 throw new UnauthorizedError('Session revoked or expired');
             }
             const user = await db.collection('users').findOne({ _id: session.userId });
+            if (!user) {
+                throw new UnauthorizedError('User not found');
+            }
             req.session = { id: session.token, ...session };
             req.user = { id: user._id.toString(), ...user };
             try {
@@ -115,7 +118,7 @@ export function requireWorkspaceRole(allowedRoles) {
             if (!req.user) {
                 throw new UnauthorizedError('Authentication required');
             }
-            const workspaceIdStr = req.params.id || req.params.workspaceId;
+            const workspaceIdStr = (req.params.id || req.params.workspaceId);
             if (!workspaceIdStr) {
                 throw new NotFoundError('Workspace ID not provided in request parameters');
             }

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-BASE_URL="https://xbpil-2401-4900-1f3a-13ce-3b5-6d9f-bff-340b.run.pinggy-free.link"
-ORIGIN="https://xbpil-2401-4900-1f3a-13ce-3b5-6d9f-bff-340b.run.pinggy-free.link"
+BASE_URL="https://viyyi-2401-4900-1c61-54fe-65c6-5491-f6c5-3e48.run.pinggy-free.link"
+ORIGIN="https://viyyi-2401-4900-1c61-54fe-65c6-5491-f6c5-3e48.run.pinggy-free.link"
 COOKIE_JAR="auth_cookies.txt"
 
 echo "=== 1. TEST SIGNUP ==="

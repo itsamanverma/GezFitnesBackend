@@ -23,7 +23,7 @@ export const getReplayData = async (req, res) => {
                 startedAt: activity.startedAt,
             },
             // Prepare for future 'frames' or 'simplified' coordinates
-            frames: activity.routeCoordinates,
+            routePolyline: activity.routePolyline,
             // Placeholder for future cinematic config
             cinematicConfig: {
                 ready: false, // True once background workers precompute interpolation

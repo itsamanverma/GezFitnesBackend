@@ -8,7 +8,7 @@ export const validateRequest = (schema) => {
         }
         catch (error) {
             if (error instanceof ZodError) {
-                return errorResponse(res, 'VALIDATION_ERROR', 'Invalid request data', 400, error.errors);
+                return errorResponse(res, 'VALIDATION_ERROR', 'Invalid request data', 400, error.issues);
             }
             next(error);
         }

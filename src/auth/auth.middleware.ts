@@ -93,6 +93,9 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       }
 
       const user = await db.collection('users').findOne({ _id: session.userId });
+      if (!user) {
+        throw new UnauthorizedError('User not found');
+      }
       
       req.session = { id: session.token, ...session };
       req.user = { id: user._id.toString(), ...user };
@@ -117,7 +120,7 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
       }
     } catch (cacheErr) {}
 
-    const sessionInfo = await auth.api.getSession({ headers: req.headers });
+    const sessionInfo = await auth.api.getSession({ headers: req.headers as any });
     if (!sessionInfo || !sessionInfo.session || !sessionInfo.user) {
       throw new UnauthorizedError('Invalid or expired session');
     }
@@ -145,7 +148,7 @@ export function requireWorkspaceRole(allowedRoles: ('owner' | 'admin' | 'member'
         throw new UnauthorizedError('Authentication required');
       }
 
-      const workspaceIdStr = req.params.id || req.params.workspaceId;
+      const workspaceIdStr = (req.params.id || req.params.workspaceId) as string;
       if (!workspaceIdStr) {
         throw new NotFoundError('Workspace ID not provided in request parameters');
       }

@@ -29,7 +29,7 @@ export async function listWorkspaces(req: Request, res: Response, next: NextFunc
 
 export async function getWorkspace(req: Request, res: Response, next: NextFunction) {
   try {
-    const workspace = await workspaceService.getWorkspaceById(req.params.id, req.user.id);
+    const workspace = await workspaceService.getWorkspaceById(req.params.id as string, req.user.id);
     return success(res, workspace);
   } catch (err) {
     next(err);
@@ -43,7 +43,7 @@ export async function updateWorkspace(req: Request, res: Response, next: NextFun
       throw new ValidationError('Validation failed', parsed.error.format());
     }
 
-    const workspace = await workspaceService.updateWorkspace(req.params.id, req.user.id, parsed.data);
+    const workspace = await workspaceService.updateWorkspace(req.params.id as string, req.user.id, parsed.data);
     return success(res, workspace, 'Workspace updated successfully');
   } catch (err) {
     next(err);
@@ -52,7 +52,7 @@ export async function updateWorkspace(req: Request, res: Response, next: NextFun
 
 export async function deleteWorkspace(req: Request, res: Response, next: NextFunction) {
   try {
-    await workspaceService.deleteWorkspace(req.params.id, req.user.id);
+    await workspaceService.deleteWorkspace(req.params.id as string, req.user.id);
     return success(res, null, 'Workspace deleted successfully');
   } catch (err) {
     next(err);
@@ -66,7 +66,7 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
       throw new ValidationError('Validation failed', parsed.error.format());
     }
 
-    await workspaceService.inviteMember(req.params.id, req.user.id, parsed.data.email, parsed.data.role);
+    await workspaceService.inviteMember(req.params.id as string, req.user.id, parsed.data.email, parsed.data.role);
     return success(res, null, 'Invite sent successfully');
   } catch (err) {
     next(err);
@@ -75,7 +75,7 @@ export async function inviteMember(req: Request, res: Response, next: NextFuncti
 
 export async function getInvitePreview(req: Request, res: Response, next: NextFunction) {
   try {
-    const inviteDetails = await workspaceService.getInviteByToken(req.params.token);
+    const inviteDetails = await workspaceService.getInviteByToken(req.params.token as string);
     return success(res, inviteDetails);
   } catch (err) {
     next(err);
@@ -84,7 +84,7 @@ export async function getInvitePreview(req: Request, res: Response, next: NextFu
 
 export async function acceptInvite(req: Request, res: Response, next: NextFunction) {
   try {
-    const result = await workspaceService.acceptInvite(req.params.token, req.user);
+    const result = await workspaceService.acceptInvite(req.params.token as string, req.user);
     return success(res, result, 'Invitation accepted successfully');
   } catch (err) {
     next(err);
@@ -93,7 +93,7 @@ export async function acceptInvite(req: Request, res: Response, next: NextFuncti
 
 export async function listMembers(req: Request, res: Response, next: NextFunction) {
   try {
-    const members = await workspaceService.listMembers(req.params.id);
+    const members = await workspaceService.listMembers(req.params.id as string);
     return success(res, members);
   } catch (err) {
     next(err);
@@ -107,7 +107,7 @@ export async function changeMemberRole(req: Request, res: Response, next: NextFu
       throw new ValidationError('Validation failed', parsed.error.format());
     }
 
-    const member = await workspaceService.changeMemberRole(req.params.id, req.user.id, req.params.uid, parsed.data.role);
+    const member = await workspaceService.changeMemberRole(req.params.id as string, req.user.id, req.params.uid as string, parsed.data.role);
     return success(res, member, 'Member role updated successfully');
   } catch (err) {
     next(err);
@@ -116,7 +116,7 @@ export async function changeMemberRole(req: Request, res: Response, next: NextFu
 
 export async function removeMember(req: Request, res: Response, next: NextFunction) {
   try {
-    await workspaceService.removeMember(req.params.id, req.user.id, req.params.uid);
+    await workspaceService.removeMember(req.params.id as string, req.user.id, req.params.uid as string);
     return success(res, null, 'Member removed successfully');
   } catch (err) {
     next(err);

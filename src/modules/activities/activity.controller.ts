@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { Activity } from './activity.model.js';
 import { success, error as errorResponse } from '../../utils/response.js';
+import { redisClient } from '../../config/redis.js';
 
 export const createActivity = async (req: Request, res: Response) => {
   try {
@@ -24,6 +25,9 @@ export const createActivity = async (req: Request, res: Response) => {
     const activityData = { ...rest, clientActivityId, userId };
     const activity = await Activity.create(activityData);
     
+    // Invalidate dashboard cache
+    await redisClient.del(`cache:dashboard:${userId}`);
+    
     return success(res, activity, undefined, 201);
   } catch (error: any) {
     // Graceful fallback for unique constraint violation race condition
@@ -46,7 +50,7 @@ export const getActivities = async (req: Request, res: Response) => {
       .sort({ startedAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('-routeCoordinates'); // Omit heavy coordinates for list view
+      .select('-routePolyline'); // Omit heavy coordinates/polyline for list view
 
     const total = await Activity.countDocuments({ userId });
 
@@ -90,6 +94,10 @@ export const deleteActivity = async (req: Request, res: Response) => {
     
     if (!activity) {
       return errorResponse(res, 'NOT_FOUND', 'Activity not found', 404);
+    }
+
+    if (userId) {
+      await redisClient.del(`cache:dashboard:${userId}`);
     }
 
     return success(res, { deleted: true, id });

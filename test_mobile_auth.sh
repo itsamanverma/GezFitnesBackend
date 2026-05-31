@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BASE_URL="https://yjhsf-2401-4900-1f3a-13ce-3b5-6d9f-bff-340b.run.pinggy-free.link/api/auth/v1"
+BASE_URL="https://viyyi-2401-4900-1c61-54fe-65c6-5491-f6c5-3e48.run.pinggy-free.link/api/auth/v1"
 
 echo "=== 1. TEST SIGNUP ==="
 SIGNUP_RES=$(curl -X POST "$BASE_URL/signup" \

@@ -8,10 +8,10 @@ const ActivitySchema = new Schema({
     calories: { type: Number, default: 0 },
     startedAt: { type: Date, required: true, index: true },
     endedAt: { type: Date, required: true },
-    routeCoordinates: {
-        type: [[Number]],
+    routePolyline: {
+        type: String,
         required: true,
-        default: []
+        default: ''
     },
     deviceMetadata: {
         deviceId: { type: String },

@@ -1,0 +1,24 @@
+import { Schema, model, Document, Types } from 'mongoose';
+
+export interface IGroupMember extends Document {
+  groupId: Types.ObjectId;
+  userId: Types.ObjectId;
+  role: 'admin' | 'member';
+  joinedAt: Date;
+  status: 'active' | 'suspended';
+}
+
+const GroupMemberSchema = new Schema<IGroupMember>({
+  groupId: { type: Schema.Types.ObjectId, ref: 'Group', required: true },
+  userId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  role: { type: String, enum: ['admin', 'member'], default: 'member' },
+  joinedAt: { type: Date, default: Date.now },
+  status: { type: String, enum: ['active', 'suspended'], default: 'active' }
+}, {
+  versionKey: false
+});
+
+// Ensure a user can only be added to a group once
+GroupMemberSchema.index({ groupId: 1, userId: 1 }, { unique: true });
+
+export const GroupMember = model<IGroupMember>('GroupMember', GroupMemberSchema);

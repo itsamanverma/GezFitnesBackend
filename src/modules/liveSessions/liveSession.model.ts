@@ -12,6 +12,7 @@ export interface ILiveSession extends Document {
   viewerIds:    Types.ObjectId[];
   viewersCount: number;
   isPublic:     boolean;
+  groupId?:     Types.ObjectId;
   lastLocation?: {
     lat:       number;
     lng:       number;
@@ -23,6 +24,13 @@ export interface ILiveSession extends Document {
   totalDistance:  number;
   averagePace:    number;
   totalDuration:  number;
+
+  // Sharing & Lifecycle fields
+  shareCode?:     string;
+  shareToken?:    string;
+  expiresAt:      Date;
+  viewerCount:    number;
+  isActive:       boolean;
 }
 
 const LiveSessionSchema = new Schema<ILiveSession>({
@@ -36,6 +44,14 @@ const LiveSessionSchema = new Schema<ILiveSession>({
   viewerIds:    [{ type: Schema.Types.ObjectId, ref: 'User' }],
   viewersCount: { type: Number, default: 0 },
   isPublic:     { type: Boolean, default: false },
+  groupId:      { type: Schema.Types.ObjectId, ref: 'Group', index: true },
+
+  // Sharing & Lifecycle fields
+  shareCode:    { type: String, unique: true, sparse: true, index: true },
+  shareToken:   { type: String },
+  expiresAt:    { type: Date, required: true, default: () => new Date(Date.now() + 3 * 60 * 60 * 1000) },
+  viewerCount:  { type: Number, default: 0 },
+  isActive:     { type: Boolean, default: true },
 
   lastLocation: {
     lat:       Number,

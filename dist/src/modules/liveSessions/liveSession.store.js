@@ -2,10 +2,11 @@ import { RoutePoint } from '../tracking/routePoint.model.js';
 import { ROUTE_BATCH_SIZE } from '../../utils/constants.js';
 const activeSessions = new Map();
 export const LiveSessionStore = {
-    init(sessionId, userId) {
+    init(sessionId, userId, groupId) {
         activeSessions.set(sessionId, {
             sessionId,
             userId,
+            groupId,
             buffer: [],
             lastLocation: null,
             totalDistance: 0,
@@ -92,6 +93,23 @@ export const LiveSessionStore = {
         return activeSessions.size;
     },
 };
+// Auto-cleanup interval to end active sessions older than 3 hours
+setInterval(async () => {
+    const now = Date.now();
+    for (const [sessionId, state] of activeSessions.entries()) {
+        if (now - state.startedAt > 3 * 60 * 60 * 1000) {
+            console.log(`Auto-expiring session ${sessionId} due to 3-hour limit`);
+            try {
+                const { LiveSessionService } = await import('./liveSession.service.js');
+                await LiveSessionService.end(sessionId, state.userId);
+            }
+            catch (err) {
+                console.error(`Failed to auto-expire session ${sessionId}:`, err);
+                activeSessions.delete(sessionId);
+            }
+        }
+    }
+}, 60 * 1000); // Check every minute
 function haversineMetres(lat1, lng1, lat2, lng2) {
     const R = 6371000;
     const φ1 = (lat1 * Math.PI) / 180;

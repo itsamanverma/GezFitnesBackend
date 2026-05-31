@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import { FriendsController } from './friends.controller.js';
+import { requireAuth } from '../../auth/auth.middleware.js';
+const router = Router();
+router.use(requireAuth);
+router.post('/request', FriendsController.sendRequest);
+router.post('/accept', FriendsController.acceptRequest);
+router.post('/decline', FriendsController.declineRequest);
+router.get('/', FriendsController.listFriends);
+router.get('/pending', FriendsController.listPending);
+export default router;

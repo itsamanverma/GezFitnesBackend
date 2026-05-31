@@ -6,6 +6,7 @@ import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
+import { requireAuth } from './auth.middleware.js';
 
 export const authRouter = Router();
 const v1AuthRouter = Router();
@@ -58,6 +59,9 @@ v1AuthRouter.post('/signup', signupLimiter, async (req, res, next) => {
 
     const { db } = await import('../config/db.js');
     const sessionDoc = await db.collection('sessions').findOne({ token: result.token });
+    if (!sessionDoc) {
+      return sendResponse(res, 500, null, { code: 'INTERNAL_ERROR', message: 'Session could not be initialized.' });
+    }
     
     const mobileSecret = crypto.randomBytes(32).toString('hex');
     const hashedMobileToken = await bcrypt.hash(mobileSecret, 10);
@@ -107,6 +111,9 @@ v1AuthRouter.post('/login', loginLimiter, async (req, res, next) => {
 
     const { db } = await import('../config/db.js');
     const sessionDoc = await db.collection('sessions').findOne({ token: result.token });
+    if (!sessionDoc) {
+      return sendResponse(res, 500, null, { code: 'INTERNAL_ERROR', message: 'Session could not be initialized.' });
+    }
     
     const mobileSecret = crypto.randomBytes(32).toString('hex');
     const hashedMobileToken = await bcrypt.hash(mobileSecret, 10);
@@ -245,10 +252,10 @@ v1AuthRouter.post('/social', loginLimiter, async (req, res, next) => {
       if (!account || account.providerId !== provider) {
         return sendResponse(res, 400, null, { code: 'INVALID_PROVIDER', message: 'Email already registered with another sign-in method.' });
       }
-      userId = existingUser._id;
+      userId = existingUser._id.toString();
       
       if (profilePicture && !existingUser.image) {
-        await db.collection('users').updateOne({ _id: userId }, { $set: { image: profilePicture } });
+        await db.collection('users').updateOne({ _id: userId } as any, { $set: { image: profilePicture } });
       }
     } else {
       // Register: Create entry in user collection with user details
@@ -264,7 +271,7 @@ v1AuthRouter.post('/social', loginLimiter, async (req, res, next) => {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      await db.collection('users').insertOne(newUser);
+      await db.collection('users').insertOne(newUser as any);
 
       // Create linked account
       const newAccount = {
@@ -275,13 +282,13 @@ v1AuthRouter.post('/social', loginLimiter, async (req, res, next) => {
         createdAt: new Date(),
         updatedAt: new Date()
       };
-      await db.collection('accounts').insertOne(newAccount);
+      await db.collection('accounts').insertOne(newAccount as any);
     }
 
     // 3. Save/Update FCM Token if mobile
     const isMobile = platform === 'ios' || platform === 'android' || !!fcmToken;
     if (isMobile && fcmToken) {
-      await db.collection('users').updateOne({ _id: userId }, { $set: { fcmToken } });
+      await db.collection('users').updateOne({ _id: userId } as any, { $set: { fcmToken } });
     }
 
     // 4. Generate JWT Token (AccessToken & RefreshToken)
@@ -317,7 +324,7 @@ v1AuthRouter.post('/social', loginLimiter, async (req, res, next) => {
     const refreshToken = `${sessionId.toString()}.${mobileSecret}`;
     const accessToken = generateAccessToken(userId, sessionId.toString());
 
-    const finalUser = await db.collection('users').findOne({ _id: userId });
+    const finalUser = await db.collection('users').findOne({ _id: userId } as any);
 
     sendResponse(res, 200, {
       accessToken,
@@ -332,7 +339,7 @@ v1AuthRouter.post('/social', loginLimiter, async (req, res, next) => {
 
 v1AuthRouter.get('/social/callback', async (req, res) => {
   try {
-    const sessionInfo = await auth.api.getSession({ headers: req.headers });
+    const sessionInfo = await auth.api.getSession({ headers: req.headers as any });
     
     const frontendDashboardUrl = env.ALLOWED_ORIGINS[0] || 'http://localhost:5173';
 
@@ -381,7 +388,7 @@ v1AuthRouter.get('/social/callback', async (req, res) => {
 
     if (isMobile && fcmToken) {
       sessionDoc.fcmToken = fcmToken;
-      await db.collection('users').updateOne({ _id: userId }, { $set: { fcmToken } });
+      await db.collection('users').updateOne({ _id: userId } as any, { $set: { fcmToken } });
     }
 
     await db.collection('sessions').insertOne(sessionDoc);
@@ -612,6 +619,69 @@ v1AuthRouter.post('/reset-password', async (req, res) => {
     sendResponse(res, 200, { message: 'Password reset successfully' });
   } catch (error: any) {
     sendResponse(res, 400, null, { code: 'RESET_FAILED', message: error.message || 'Password reset failed' });
+  }
+});
+
+// Device Session Management - Get Active Sessions
+v1AuthRouter.get('/sessions', requireAuth, async (req, res) => {
+  try {
+    const { db } = await import('../config/db.js');
+    const userId = req.user!.id;
+    const currentSessionId = req.session && req.session._id ? req.session._id.toString() : '';
+
+    const sessions = await db.collection('sessions').find({ userId }).toArray();
+    
+    const data = sessions.map(s => ({
+      sessionId: s._id.toString(),
+      deviceId: s.deviceId || 'unknown',
+      platform: s.platform || 'unknown',
+      appVersion: s.appVersion || 'unknown',
+      lastActiveAt: s.lastActiveAt || s.updatedAt || s.createdAt,
+      isCurrentDevice: s._id.toString() === currentSessionId
+    }));
+    
+    sendResponse(res, 200, data);
+  } catch (error: any) {
+    sendResponse(res, 500, null, { code: 'INTERNAL_ERROR', message: error.message || 'Failed to fetch active sessions' });
+  }
+});
+
+// Device Session Management - Logout Specific Device
+v1AuthRouter.delete('/sessions/:sessionId', requireAuth, async (req, res) => {
+  try {
+    const { db } = await import('../config/db.js');
+    const { ObjectId } = await import('mongodb');
+    const { redisClient } = await import('../config/redis.js');
+    const crypto = await import('crypto');
+
+    const sessionId = req.params.sessionId as string;
+    const userId = req.user!.id;
+
+    let objId;
+    try {
+      objId = new ObjectId(sessionId);
+    } catch (err) {
+      return sendResponse(res, 400, null, { code: 'INVALID_SESSION_ID', message: 'Invalid session ID format' });
+    }
+
+    const session = await db.collection('sessions').findOne({ 
+      _id: objId,
+      userId: userId
+    });
+
+    if (!session) {
+      return sendResponse(res, 404, null, { code: 'SESSION_NOT_FOUND', message: 'Session not found or unauthorized' });
+    }
+
+    await db.collection('sessions').deleteOne({ _id: objId });
+
+    // Invalidate session cache in Redis
+    const sessionCacheKey = `cache:session:${crypto.createHash('sha256').update(sessionId).digest('hex')}`;
+    await redisClient.del(sessionCacheKey);
+
+    sendResponse(res, 200, { message: 'Session removed successfully' });
+  } catch (error: any) {
+    sendResponse(res, 500, null, { code: 'INTERNAL_ERROR', message: error.message || 'Failed to remove session' });
   }
 });
 

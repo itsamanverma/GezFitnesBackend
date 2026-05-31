@@ -14,6 +14,7 @@ interface LocationPayload {
 interface LiveState {
   sessionId:    string;
   userId:       string;
+  groupId?:     string;
   buffer:       LocationPayload[];
   lastLocation: LocationPayload | null;
   totalDistance: number;
@@ -25,10 +26,11 @@ interface LiveState {
 const activeSessions = new Map<string, LiveState>();
 
 export const LiveSessionStore = {
-  init(sessionId: string, userId: string): void {
+  init(sessionId: string, userId: string, groupId?: string): void {
     activeSessions.set(sessionId, {
       sessionId,
       userId,
+      groupId,
       buffer:         [],
       lastLocation:   null,
       totalDistance:  0,
@@ -142,6 +144,23 @@ export const LiveSessionStore = {
     return activeSessions.size;
   },
 };
+
+// Auto-cleanup interval to end active sessions older than 3 hours
+setInterval(async () => {
+  const now = Date.now();
+  for (const [sessionId, state] of activeSessions.entries()) {
+    if (now - state.startedAt > 3 * 60 * 60 * 1000) {
+      console.log(`Auto-expiring session ${sessionId} due to 3-hour limit`);
+      try {
+        const { LiveSessionService } = await import('./liveSession.service.js');
+        await LiveSessionService.end(sessionId, state.userId);
+      } catch (err) {
+        console.error(`Failed to auto-expire session ${sessionId}:`, err);
+        activeSessions.delete(sessionId);
+      }
+    }
+  }
+}, 60 * 1000); // Check every minute
 
 function haversineMetres(lat1: number, lng1: number, lat2: number, lng2: number): number {
   const R = 6371000;

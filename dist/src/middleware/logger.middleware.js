@@ -1,6 +1,6 @@
-import pinoHttp from 'pino-http';
+import pinoHttpImport from 'pino-http';
 import { logger } from '../utils/logger.js';
-export const loggerMiddleware = pinoHttp({
+export const loggerMiddleware = pinoHttpImport({
     logger,
     genReqId: (req) => {
         return req.headers['x-request-id'] || req.headers['X-Request-ID'] || '';

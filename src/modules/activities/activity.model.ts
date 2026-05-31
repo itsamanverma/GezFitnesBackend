@@ -10,7 +10,7 @@ export interface IActivity extends Document {
   startedAt: Date;
   endedAt: Date;
   clientActivityId?: string; // Client-generated UUID for idempotent offline sync
-  routeCoordinates: number[][]; // Compressed: [[lat, lng], [lat, lng]]
+  routePolyline: string; // Compressed polyline representation
   deviceMetadata?: {
     deviceId: string;
     platform: string;
@@ -30,10 +30,10 @@ const ActivitySchema = new Schema(
     calories: { type: Number, default: 0 },
     startedAt: { type: Date, required: true, index: true },
     endedAt: { type: Date, required: true },
-    routeCoordinates: {
-      type: [[Number]], 
+    routePolyline: {
+      type: String,
       required: true,
-      default: []
+      default: ''
     },
     deviceMetadata: {
       deviceId: { type: String },

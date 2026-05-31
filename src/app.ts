@@ -42,8 +42,14 @@ app.use((req, res, next) => {
 });
 
 // 3. Post-Auth Body Parsing Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  if (req.path.startsWith('/v1/activities')) {
+    express.json({ limit: '5mb' })(req, res, next);
+  } else {
+    express.json({ limit: '1mb' })(req, res, next);
+  }
+});
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // 4. Mount Custom Token-Based Mobile Auth
 app.use('/api/auth', authRouter);
@@ -87,7 +93,7 @@ app.get('/health/ready', async (req, res) => {
 // 5. Swagger API Docs
 app.use(
   '/docs',
-  (req, res, next) => {
+  (req: any, res: any, next: any) => {
     res.setHeader(
       'Content-Security-Policy',
       "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;"
@@ -101,6 +107,11 @@ app.use(
 import activityRoutes from './modules/activities/activity.routes.js';
 import replayRoutes from './modules/replay/replay.routes.js';
 import liveSessionRoutes from './modules/liveSessions/liveSession.routes.js';
+import groupRoutes from './modules/groups/group.routes.js';
+import dashboardRoutes from './modules/dashboard/dashboard.routes.js';
+import deviceRoutes from './modules/devices/device.routes.js';
+import healthRoutes from './modules/health/health.routes.js';
+import friendRoutes from './modules/friends/friends.routes.js';
 
 // 6. App Routes
 app.use('/v1/users', userRoutes);
@@ -108,6 +119,11 @@ app.use('/v1/workspaces', workspaceRoutes);
 app.use('/v1/activities', activityRoutes);
 app.use('/v1/replay', replayRoutes);
 app.use('/v1/live-sessions', liveSessionRoutes);
+app.use('/v1/groups', groupRoutes);
+app.use('/v1/dashboard', dashboardRoutes);
+app.use('/v1/devices', deviceRoutes);
+app.use('/v1/health', healthRoutes);
+app.use('/v1/friends', friendRoutes);
 
 // 6. 404 Route
 app.use((req, res, next) => {

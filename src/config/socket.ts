@@ -64,13 +64,22 @@ export function createSocketServer(httpServer: HttpServer) {
           return emitError(socket, 'User mismatch', 'AUTH_MISMATCH');
         }
 
-        if (!LiveSessionStore.isActive(sessionId)) {
+        const session = await LiveSessionService.getById(sessionId);
+        if (!session || !LiveSessionStore.isActive(sessionId)) {
           return emitError(socket, 'Session not found or not active', 'SESSION_NOT_FOUND');
         }
 
         socket.join(roomId(sessionId));
         socket.data.sessionId = sessionId;
         socket.data.role = 'owner';
+        socket.data.activityType = session.activityType;
+
+        if (session.groupId) {
+          const groupIdStr = session.groupId.toString();
+          socket.data.groupId = groupIdStr;
+          socket.join(`group:${groupIdStr}`);
+          console.log(`Owner joined socket group room: group:${groupIdStr}`);
+        }
 
         socket.emit(SERVER_EVENTS.SESSION_STARTED, {
           sessionId,
@@ -81,6 +90,29 @@ export function createSocketServer(httpServer: HttpServer) {
         console.log(`Owner joined socket room for session: ${sessionId}`);
       } catch (err) {
         emitError(socket, 'Invalid payload', 'VALIDATION_ERROR');
+      }
+    });
+
+    socket.on('group:join', async (payload: unknown) => {
+      try {
+        const GroupJoinSchema = z.object({
+          groupId: z.string(),
+          userId: z.string(),
+        });
+        const { groupId, userId } = GroupJoinSchema.parse(payload);
+        socket.data.userId = userId;
+
+        const { GroupService } = await import('../modules/groups/group.service.js');
+        const isMember = await GroupService.checkMembership(groupId, userId);
+        if (!isMember) {
+          return emitError(socket, 'Not authorized. You are not a member of this group.', 'UNAUTHORIZED_GROUP_MEMBER');
+        }
+
+        socket.join(`group:${groupId}`);
+        console.log(`User ${userId} joined socket group room: group:${groupId}`);
+        socket.emit('group:joined', { groupId, timestamp: Date.now() });
+      } catch (err) {
+        emitError(socket, 'Failed to join group room', 'GROUP_JOIN_ERROR');
       }
     });
 
@@ -145,6 +177,21 @@ export function createSocketServer(httpServer: HttpServer) {
           totalDistance: result.totalDistance,
           timestamp:     data.timestamp,
         });
+
+        // Broadcast to group:<groupId> if associated with a group
+        if (socket.data.groupId) {
+          io.to(`group:${socket.data.groupId}`).emit('group:activity-update', {
+            sessionId:     data.sessionId,
+            userId:        socket.data.userId,
+            lat:           data.lat,
+            lng:           data.lng,
+            speed:         data.speed,
+            pace:          data.pace,
+            heading:       data.heading,
+            activityType:  socket.data.activityType || 'RUN',
+            timestamp:     data.timestamp,
+          });
+        }
 
       } catch (err) {
         emitError(socket, 'Invalid location payload', 'VALIDATION_ERROR');
